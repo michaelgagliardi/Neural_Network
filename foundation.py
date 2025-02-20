@@ -2,7 +2,6 @@ import numpy as np
 import math
 import sys
 import matplotlib
-from cd import create_dataset
 
 class layer_dense:
     def __init__(self, n_inputs, n_neurons):
@@ -95,4 +94,3 @@ class activation_softmax_loss():
         ##normalize
         self.dinputs = self.dinputs / samples
 
-        
