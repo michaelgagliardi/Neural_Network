@@ -43,6 +43,20 @@ class layer_dense:
         ##gradient on values
         self.dinputs = np.dot(dvalues, self.weights.T)
 
+class dropout_layer:
+    def __init__(self, rate):
+        self.rate = 1 - rate
+
+    def forward(self, inputs):
+        self.inputs = inputs
+        self.binary_mask = (
+            np.random.binomial(1, self.rate, size=inputs.shape) / self.rate
+        )
+        self.output = inputs * self.binary_mask
+    
+    def backward(self, dvalues):
+        self.dinputs = dvalues * self.binary_mask
+
 class activation_relu:
     def forward(self, inputs):
         self.inputs = inputs
@@ -67,6 +81,16 @@ class activation_softmax:
             jacobian_matrix = np.diagflat(output) - np.dot(output, output.T)
             ##samplewise gradient
             self.dinputs[index] = np.dot(jacobian_matrix, dvalue)
+
+class activation_sigmoid:
+    def forward(self, inputs):
+        self.inputs = inputs
+        self.output = 1/ (1 + np.exp(-inputs))
+
+    def backward(self, dvalues):
+        self.dinputs = dvalues * (1 - self.output) * self.output
+
+
 class Loss:
     def calculate(self, output, y):
         sample_losses = self.forward(output, y)
@@ -134,3 +158,22 @@ class activation_softmax_loss(Loss):
         ##normalize
         self.dinputs = self.dinputs / samples
 
+class binary_crossentropy(Loss):
+    def forward(self, y_pred, y_true):
+        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+        sample_losses = -(
+            y_true * np.log(y_pred_clipped) + (1 - y_true) * np.log(1 - y_pred_clipped)
+        )
+        sample_losses = np.mean(sample_losses, axis=-1)
+        return sample_losses
+
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+
+        outputs = len(dvalues[0])
+
+        clipped_dvalues = np.clip(dvalues, 1e-7, 1 - 1e-7)
+
+        self.dinputs = -(y_true / clipped_dvalues - (1-y_true) / (1 - clipped_dvalues)) / outputs
+
+        self.dinputs = self.dinputs / samples
