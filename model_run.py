@@ -2,10 +2,12 @@ import numpy as np
 import math
 from foundation import *
 from optimizer import *
-from dataset import create_dataset
+from dataset import spiral_dataset
+from activation import *
+from loss import *
 
 ##create dataset
-X, y = create_dataset(points=1000, classes=2)
+X, y = spiral_dataset(points=1000, classes=2)
 
 y=y.reshape(-1,1)
 
@@ -76,7 +78,7 @@ for epoch in range(10001):
     optimizer.update_params(dense2)
 
 ##test the model
-X_test, y_test = create_dataset(points=100, classes=2)
+X_test, y_test = spiral_dataset(points=100, classes=2)
 
 y_test = y_test.reshape(-1, 1)
 dense1.forward(X_test)
