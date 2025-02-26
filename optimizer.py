@@ -150,7 +150,7 @@ class optimizer_adam:
             )
 
     def update_params(self, layer: layer_dense):
-        self.pre_update_params()
+        # self.pre_update_params()
 
         if not hasattr(layer, "weight_cache"):
             layer.weight_cache = np.zeros_like(layer.weights)
@@ -185,7 +185,7 @@ class optimizer_adam:
             / (np.sqrt(bias_cache_corrected) + self.epsilon)
         )
 
-        self.post_update_params()
+        # self.post_update_params()
 
     def post_update_params(self):
         self.iterations += 1

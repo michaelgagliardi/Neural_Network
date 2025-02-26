@@ -14,9 +14,10 @@ class layer_dense:
         self.weight_regularizer_L2 = weight_regularizer_L2
         self.bias_regularizer_L1 = bias_regularizer_L1
         self.bias_regularizer_L2 = bias_regularizer_L2
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         self.inputs = inputs
         self.output = np.dot(inputs, self.weights) + self.biases
+    
     def backward(self, dvalues):
         ##gradients on parameters
         self.dweights = np.dot(self.inputs.T, dvalues)
@@ -47,17 +48,18 @@ class dropout_layer:
     def __init__(self, rate):
         self.rate = 1 - rate
 
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         self.inputs = inputs
+
         self.binary_mask = (
             np.random.binomial(1, self.rate, size=inputs.shape) / self.rate
         )
         self.output = inputs * self.binary_mask
-    
+
     def backward(self, dvalues):
         self.dinputs = dvalues * self.binary_mask
 
 
-
-
-
+class layer_input:
+    def forward(self, inputs, training):
+        self.output = inputs

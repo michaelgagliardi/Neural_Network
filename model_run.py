@@ -1,101 +1,85 @@
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+from dataset import *
 from foundation import *
 from optimizer import *
-from dataset import spiral_dataset
 from activation import *
 from loss import *
+from accuracy import *
+from model import *
 
-##create dataset
-X, y = spiral_dataset(points=1000, classes=2)
+EPOCHS = 10
+BATCH_SIZE = 128
 
-y=y.reshape(-1,1)
+model_type = "mnist"
 
-##define model and hyperparameters
-dense1 = layer_dense(2, 64, weight_regularizer_L2 = 5e-4, bias_regularizer_L2=5e-4)
+if model_type == 'regression':
+    X, y = sine_dataset()
 
-activation1 = activation_relu()
+    model = Model()
+    model.add(layer_dense(1, 64))
+    model.add(activation_relu())
+    model.add(layer_dense(64,64))
+    model.add(activation_relu())
+    model.add(layer_dense(64,1))
+    model.add(activation_linear())
 
-dense2 = layer_dense(64, 1)
+    model.set(loss= mse_loss(), optimizer=optimizer_adam(learning_rate=0.005, decay=1e-3), accuracy=accuracy_regression())
 
-activation2 = activation_sigmoid()
+    model.finalize()
 
-# dropout1 = dropout_layer(0.1)
+    model.train(X, y, epochs=10000, print_every=100)
 
-# loss_activation = activation_softmax_loss()
 
-loss_function = binary_crossentropy()
+elif model_type == 'categorical':
+    X, y = spiral_dataset(1000, 3)
+    X_test, y_test = spiral_dataset(100, 3)
 
-# optimizer = optimizer_sgd(learning_rate=0.85, decay=1e-3, momentum=0.9)
-# optimizer = optimizer_adagrad(decay=1e-4)
-# optimizer = optimizer_rmsprop(learning_rate=0.02, decay=1e-5, rho=0.999)
-optimizer = optimizer_adam(decay=5e-7)
+    model = Model()
 
-##train model
-for epoch in range(10001):
-    dense1.forward(X)
+    model.add(layer_dense(2, 512, weight_regularizer_L2=5e-4, bias_regularizer_L2=5e-4))
+    model.add(activation_relu())
+    model.add(dropout_layer(0.1))
+    model.add(layer_dense(512, 3))
+    model.add(activation_softmax())
+    model.set(
+        loss=loss_categorical_cross_entropy(),
+        optimizer=optimizer_adam(learning_rate=0.05, decay=5e-5),
+        accuracy=accuracy_categorical(),
+    )
 
-    activation1.forward(dense1.output)
+    model.finalize()
 
-    # dropout1.forward(activation1.output)
+    model.train(X, y, validation_data=(X_test, y_test), epochs=10000, print_every=100)
 
-    dense2.forward(activation1.output)
+elif model_type == "mnist":
+    X,y,X_test,y_test = create_data_mnist('fashion_mnist_images')
+    keys = np.array(range(X.shape[0]))
+    np.random.shuffle(keys)
 
-    activation2.forward(dense2.output)
+    X = X[keys]
+    y = y[keys]
 
-    data_loss = loss_function.calculate(activation2.output, y)
+    X = (X.reshape(X.shape[0], X.shape[1]*X.shape[2]).astype(np.float32) - 127.5) / 127.5
 
-    regularization_loss = loss_function.regularization_loss(dense1) + loss_function.regularization_loss(dense2)
+    X_test = (X_test.reshape(X_test.shape[0], X_test.shape[1] * X_test.shape[2]).astype(np.float32) - 127.5) / 127.5
 
-    loss = data_loss + regularization_loss
+    model = Model()
 
-    # predictions = np.argmax(loss_function.output, axis=1)
-    # if len(y.shape) == 2:
-    #     y = np.argmax(y, axis=1)
-    # accuracy = np.mean(predictions == y)
+    model.add(layer_dense(X.shape[1],64))
+    model.add(activation_relu())
+    model.add(layer_dense(64,64))
+    model.add(activation_relu())
+    model.add(layer_dense(64, 10))
+    model.add(activation_softmax())
 
-    predictions = (activation2.output > 0.5) * 1
-    accuracy = np.mean(predictions == y)
+    model.set(loss=loss_categorical_cross_entropy,
+              optimizer=optimizer_adam(decay=5e-5),
+              accuracy=accuracy_categorical())
+    
+    model.finalize()
 
-    if not epoch % 100:
-        print(
-            f"epoch: {epoch}, "
-            + f"acc: {accuracy:.3f}, "
-            + f"loss: {loss:.3f}, ("
-            + f"regularization loss: {regularization_loss:.3f}, "
-            + f"data loss: {data_loss:.3f}), "
-            + f"lr: {optimizer.current_learning_rate:.5f}"
-        )
-
-    loss_function.backward(activation2.output, y)
-    activation2.backward(loss_function.dinputs)
-    dense2.backward(activation2.dinputs)
-    # dropout1.backward(dense2.dinputs)
-    activation1.backward(dense2.dinputs)
-    dense1.backward(activation1.dinputs)
-
-    optimizer.update_params(dense1)
-    optimizer.update_params(dense2)
-
-##test the model
-X_test, y_test = spiral_dataset(points=100, classes=2)
-
-y_test = y_test.reshape(-1, 1)
-dense1.forward(X_test)
-activation1.forward(dense1.output)
-
-dense2.forward(activation1.output)
-
-activation2.forward(dense2.output)
-
-loss = loss_function.calculate(activation2.output, y_test)
-
-# predictions = np.argmax(loss_function.output, axis = 1)
-# if len(y_test.shape) ==2:
-#     y_test = np.argmax(y_test, axis=1)
-# accuracy = np.mean(predictions == y_test)
-predictions = (activation2.output > 0.5) * 1
-accuracy = np.mean(predictions == y_test)
-
-print('\n')
-print(f'validation acc: {accuracy:.3f}, loss: {loss:.3f}')
+    model.train(X, y, validation_data=(X_test, y_test), epochs=5, batch_size=128, print_every=100)
+else:
+    print('Please specify model type as "regression" or "categorical"')
