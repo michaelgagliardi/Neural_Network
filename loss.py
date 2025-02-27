@@ -2,7 +2,7 @@ import numpy as np
 import math
 import sys
 import matplotlib
-from foundation import *
+from layers import *
 from activation import *
 
 class Loss:
@@ -40,7 +40,7 @@ class Loss:
         data_loss = np.mean(sample_losses)
 
         self.accumulated_sum += np.sum(sample_losses)
-        self.accumulated_count += np.len(sample_losses)
+        self.accumulated_count += len(sample_losses)
 
         if not include_regularization:
             return data_loss
