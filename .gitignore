@@ -130,4 +130,3 @@ dmypy.json
 
 #Any additional models and parameters
 *.params
-*.model
