@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import sys
-from layers import layer_dense
+from core.layers import *
 
 
 class optimizer_sgd:

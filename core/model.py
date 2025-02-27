@@ -2,12 +2,12 @@ import numpy as np
 import math
 import pickle
 import copy
-from dataset import *
-from layers import *
-from optimizer import *
-from activation import *
-from loss import *
-from accuracy import *
+
+from core.optimizer import *
+from core.activation import *
+from core.loss import *
+from core.accuracy import *
+from core.layers import *
 
 class Model:
     def __init__(self):
@@ -187,7 +187,7 @@ class Model:
 
         return np.vstack(output)
     
-    
+
     def get_parameters(self):
         parameters = []
 
@@ -227,8 +227,5 @@ class Model:
     @staticmethod
     def load(path):
         with open(path, 'rb') as f:
-            model = pickle.load(f)
-        return model
-    
-
-
+            saved_model = pickle.load(f)
+        return saved_model

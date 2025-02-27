@@ -2,8 +2,8 @@ import numpy as np
 import math
 import sys
 import matplotlib
-from layers import *
-from activation import *
+from core.layers import *
+from core.activation import *
 
 class Loss:
 
