@@ -131,3 +131,5 @@ dmypy.json
 #Any additional models and parameters
 *.parms
 *.model
+
+*.DS_Store
