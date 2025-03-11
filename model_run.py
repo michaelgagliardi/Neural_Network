@@ -26,7 +26,7 @@ fashion_mnist_labels = {
     9: "Ankle boot",
 }
 
-model_type = "mnist"
+model_type = "load"
 
 if model_type == "regression":
     X, y = sine_dataset()

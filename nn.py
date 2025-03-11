@@ -1,11 +1,18 @@
 import os
 from accelerate import accelerator
+import random
+from PIL import Image
 import torch
 from data.dataset import *
 from torch import nn
 import torchvision
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from pathlib import Path
+
+image_path_list = list(Path("data/fashion_mnist_images").glob("*/*/*.png"))
+train_dir = "data/fashion_mnist_images/train"
+test_dir = "data/fashion_mnist_images/test"
 
 fashion_mnist_labels = {
     0: "T-shirt/top",
@@ -21,25 +28,23 @@ fashion_mnist_labels = {
 }
 
 EPOCHS = 10
-BATCH_SIZE_TRAIN = 128
-BATCH_SIZE_TEST = 128
+BATCH_SIZE = 128
 LEARNING_RATE = 0.01
 
 momentum = 0.5
 log_interval = 10
 random_seed = 1
 
-train_dir = "data/fashion_mnist_images/train"
-test_dir = "data/fashion_mnist_images/test"
-
-
 class custom_scaling:
     def __init__(self, scale_factor):
         self.scale_factor = scale_factor
 
     def __call__(self, sample):
+        # attributes = dir(sample)
+        # for att in attributes:
+        #     print(att)
         scaled_sample = (
-            sample.reshape(sample.shape[0], sample.shape[1] * sample.shape[2]).astype(
+            sample.resize(1, sample.size[0] * sample.size[1]).astype(
                 np.float32
             )
             - self.scale_factor / self.scale_factor
@@ -49,7 +54,7 @@ class custom_scaling:
 
 data_transform = transforms.Compose(
     [
-        custom_scaling(scale_factor=127.5),
+        # custom_scaling(scale_factor=127.5),
         transforms.Resize(size=(28, 28)),
         transforms.ToTensor(),
     ]
@@ -62,19 +67,20 @@ test_data = datasets.ImageFolder(
     root=test_dir, transform=data_transform, target_transform=None
 )
 
-train_dataloader = DataLoader(
-    dataset=train_data,
-    batch_size=128,  # how many samples per batch?
-    num_workers=4,  # how many subprocesses to use for data loading? (higher = more)
-    shuffle=True,
-)
 
-test_dataloader = DataLoader(
-    dataset=test_data,
-    batch_size=128,
-    num_workers=4,
-    shuffle=False,
-)
+# train_dataloader = DataLoader(
+#     dataset=train_data,
+#     batch_size=BATCH_SIZE,  # how many samples per batch?
+#     num_workers=1,  # how many subprocesses to use for data loading? (higher = more)
+#     shuffle=True,
+# )
+
+# test_dataloader = DataLoader(
+#     dataset=test_data,
+#     batch_size=BATCH_SIZE,
+#     num_workers=1,
+#     shuffle=False,
+# )
 
 
 class FashionMNISTModelV0(nn.Module):
@@ -101,9 +107,18 @@ model_0 = FashionMNISTModelV0(
     output_shape=len(class_names),  # one for every class
 )
 
-print(train_dataloader, test_dataloader)
+# Setup device-agnostic code
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+# print(device)
+# if __name__ == '__main__':
+#     print(f"Dataloaders: {train_dataloader, test_dataloader}")
+#     print(f"Length of train dataloader: {len(train_dataloader)} batches of {BATCH_SIZE}")
+#     print(f"Length of test dataloader: {len(test_dataloader)} batches of {BATCH_SIZE}")
 
-accuracy = self.accuracy.calculate(predictions, batch_y)
+#     train_features_batch, train_labels_batch = next(iter(train_dataloader))
+#     print(train_features_batch.shape, train_labels_batch.shape)
 
-image, label = train_data[0]
-print(image.shape, label)
+# accuracy = self.accuracy.calculate(predictions, batch_y)
+
+# image, label = train_dataloader[0]
+# print(image.shape, label)
