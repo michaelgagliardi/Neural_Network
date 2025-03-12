@@ -1,6 +1,6 @@
 from data.dataset import *
 from core.accuracy import *
-from pytorch_model import *
+from core.pytorch_model import *
 from core.accuracy import *
 
 from pathlib import Path
