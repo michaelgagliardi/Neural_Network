@@ -8,7 +8,7 @@ from core.activation import *
 from core.accuracy import *
 from core.optimizer import *
 from core.loss import *
-from core.model import Custom_Model
+from core.model import Model
 
 EPOCHS = 10
 BATCH_SIZE = 128
@@ -33,7 +33,7 @@ model_type = "mnist"
 if model_type == "regression":
     X, y = sine_dataset()
 
-    model = Custom_Model()
+    model = Model()
     model.add(layer_dense(1, LAYER_SIZE))
     model.add(activation_relu())
     model.add(layer_dense(LAYER_SIZE, LAYER_SIZE))
@@ -56,7 +56,7 @@ elif model_type == "categorical":
     X, y = spiral_dataset(1000, 3)
     X_test, y_test = spiral_dataset(100, 3)
 
-    model = Custom_Model()
+    model = Model()
 
     model.add(layer_dense(2, 512, weight_regularizer_L2=5e-4, bias_regularizer_L2=5e-4))
     model.add(activation_relu())
@@ -93,7 +93,7 @@ elif model_type == "mnist":
         - 127.5
     ) / 127.5
 
-    model = Custom_Model()
+    model = Model()
 
     model.add(layer_dense(X.shape[1], LAYER_SIZE))
     model.add(activation_relu())
@@ -122,7 +122,7 @@ elif model_type == "mnist":
     model.save_parameters("parameters/fashion_mnist.parms")
     # New model
     # Instantiate the model
-    model = Custom_Model()
+    model = Model()
     # Add layers
     model.add(layer_dense(X.shape[1], LAYER_SIZE))
     model.add(activation_relu())
@@ -146,7 +146,7 @@ elif model_type == "load":
     image_data = cv2.resize(image_data, (28, 28))
     image_data = 255 - image_data
     image_data = (image_data.reshape(1, -1).astype(np.float32) - 127.5) / 127.5
-    model = Custom_Model.load("models/fashion_mnist.model")
+    model = Model.load("models/fashion_mnist.model")
     # Predict on the image
     confidences = model.predict(image_data)
     # Get prediction instead of confidence levels
