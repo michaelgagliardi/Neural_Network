@@ -9,7 +9,7 @@ from core.loss import *
 from core.accuracy import *
 from core.layers import *
 
-class Model:
+class Custom_Model:
     def __init__(self):
         self.layers = []
         self.softmax_classifer_output = None

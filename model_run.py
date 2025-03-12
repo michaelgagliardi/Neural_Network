@@ -8,10 +8,12 @@ from core.activation import *
 from core.accuracy import *
 from core.optimizer import *
 from core.loss import *
-from core.model import Model
+from core.model import Custom_Model
 
 EPOCHS = 10
 BATCH_SIZE = 128
+LAYER_SIZE = 64
+LEARNING_RATE = 0.005
 
 fashion_mnist_labels = {
     0: "T-shirt/top",
@@ -26,22 +28,22 @@ fashion_mnist_labels = {
     9: "Ankle boot",
 }
 
-model_type = "load"
+model_type = "mnist"
 
 if model_type == "regression":
     X, y = sine_dataset()
 
-    model = Model()
-    model.add(layer_dense(1, 64))
+    model = Custom_Model()
+    model.add(layer_dense(1, LAYER_SIZE))
     model.add(activation_relu())
-    model.add(layer_dense(64, 64))
+    model.add(layer_dense(LAYER_SIZE, LAYER_SIZE))
     model.add(activation_relu())
-    model.add(layer_dense(64, 1))
+    model.add(layer_dense(LAYER_SIZE, 1))
     model.add(activation_linear())
 
     model.set(
         loss=mse_loss(),
-        optimizer=optimizer_adam(learning_rate=0.005, decay=1e-3),
+        optimizer=optimizer_adam(learning_rate=LEARNING_RATE, decay=1e-3),
         accuracy=accuracy_regression(),
     )
 
@@ -54,7 +56,7 @@ elif model_type == "categorical":
     X, y = spiral_dataset(1000, 3)
     X_test, y_test = spiral_dataset(100, 3)
 
-    model = Model()
+    model = Custom_Model()
 
     model.add(layer_dense(2, 512, weight_regularizer_L2=5e-4, bias_regularizer_L2=5e-4))
     model.add(activation_relu())
@@ -63,7 +65,7 @@ elif model_type == "categorical":
     model.add(activation_softmax())
     model.set(
         loss=loss_categorical_cross_entropy(),
-        optimizer=optimizer_adam(learning_rate=0.05, decay=5e-5),
+        optimizer=optimizer_adam(learning_rate=LEARNING_RATE, decay=5e-5),
         accuracy=accuracy_categorical(),
     )
 
@@ -91,18 +93,18 @@ elif model_type == "mnist":
         - 127.5
     ) / 127.5
 
-    model = Model()
+    model = Custom_Model()
 
-    model.add(layer_dense(X.shape[1], 64))
+    model.add(layer_dense(X.shape[1], LAYER_SIZE))
     model.add(activation_relu())
-    model.add(layer_dense(64, 64))
+    model.add(layer_dense(LAYER_SIZE, LAYER_SIZE))
     model.add(activation_relu())
-    model.add(layer_dense(64, 10))
+    model.add(layer_dense(LAYER_SIZE, 10))
     model.add(activation_softmax())
 
     model.set(
         loss=loss_categorical_cross_entropy(),
-        optimizer=optimizer_adam(decay=5e-5),
+        optimizer=optimizer_adam(learning_rate=LEARNING_RATE, decay=5e-5),
         accuracy=accuracy_categorical(),
     )
 
@@ -112,21 +114,21 @@ elif model_type == "mnist":
         X,
         y,
         validation_data=(X_test, y_test),
-        epochs=5,
-        batch_size=128,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
         print_every=100,
     )
 
     model.save_parameters("parameters/fashion_mnist.parms")
     # New model
     # Instantiate the model
-    model = Model()
+    model = Custom_Model()
     # Add layers
-    model.add(layer_dense(X.shape[1], 128))
+    model.add(layer_dense(X.shape[1], LAYER_SIZE))
     model.add(activation_relu())
-    model.add(layer_dense(128, 128))
+    model.add(layer_dense(LAYER_SIZE, LAYER_SIZE))
     model.add(activation_relu())
-    model.add(layer_dense(128, 10))
+    model.add(layer_dense(LAYER_SIZE, 10))
     model.add(activation_softmax())
     model.set(loss=loss_categorical_cross_entropy(), accuracy=accuracy_categorical())
     # Finalize the model
@@ -144,7 +146,7 @@ elif model_type == "load":
     image_data = cv2.resize(image_data, (28, 28))
     image_data = 255 - image_data
     image_data = (image_data.reshape(1, -1).astype(np.float32) - 127.5) / 127.5
-    model = Model.load("models/fashion_mnist.model")
+    model = Custom_Model.load("models/fashion_mnist.model")
     # Predict on the image
     confidences = model.predict(image_data)
     # Get prediction instead of confidence levels
