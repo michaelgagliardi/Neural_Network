@@ -251,8 +251,10 @@ class PyTorch_Model(nn.Module):
         torch.save(self.state_dict(), path)
 
     @staticmethod
-    def load(path):
-        model = PyTorch_Model()
+    def load(path, *args, **kwargs):
+        model = PyTorch_Model(*args, **kwargs)
         model.load_state_dict(torch.load(path, map_location=device))
+        if next(model.parameters()).device != device:
+            model.to(device)
         model.to(device)
         return model
