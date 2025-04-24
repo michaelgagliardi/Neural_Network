@@ -78,6 +78,11 @@ pytorch_model_metrics = {
     "prediction_time": 0.0,
 }
 
+# Initialize session state for tracking if new models were trained
+if "new_models_trained" not in st.session_state:
+    st.session_state.new_models_trained = False
+if "training_hyperparams" not in st.session_state:
+    st.session_state.training_hyperparams = None
 
 # Helper functions for model loading and prediction
 def load_custom_model():
@@ -242,9 +247,8 @@ def train_models(hyperparams, X, y, X_test, y_test):
     st.write("Training models with the following hyperparameters:")
     st.write(hyperparams)
 
-    # Create and train custom model
+    # Train custom model
     st.write("Training custom model...")
-
     progress_bar_custom = st.progress(0)
     status_text_custom = st.empty()
 
@@ -279,19 +283,33 @@ def train_models(hyperparams, X, y, X_test, y_test):
 
     custom_model.finalize()
 
-    # Train custom model (simplified for demo)
+    # Actual training for custom model
     start_time_custom = time.time()
 
-    for epoch in range(hyperparams["epochs"]):
-        # Update progress
-        progress = (epoch + 1) / hyperparams["epochs"]
+    # Create a callback to update the progress bar
+    def progress_callback(epoch, total_epochs):
+        progress = (epoch) / total_epochs
         progress_bar_custom.progress(progress)
-        status_text_custom.text(
-            f"Custom model training - Epoch {epoch+1}/{hyperparams['epochs']}"
-        )
+        status_text_custom.text(f"Custom model training - Epoch {epoch}/{total_epochs}")
 
-        # Simulate training step
-        time.sleep(0.1)  # Just for demo purposes
+    # Update progress for epoch 0
+    progress_callback(0, hyperparams["epochs"])
+
+    # Train the model with print_every set to update frequently
+    custom_model.train(
+        X,
+        y,
+        validation_data=(X_test, y_test),
+        epochs=hyperparams["epochs"],
+        batch_size=hyperparams["batch_size"],
+        print_every=max(
+            1, hyperparams["epochs"] // 10
+        ),  # Update about 10 times during training
+    )
+
+    # Update to 100% when done
+    progress_bar_custom.progress(1.0)
+    status_text_custom.text(f"Custom model training - Complete!")
 
     end_time_custom = time.time()
     training_time_custom = end_time_custom - start_time_custom
@@ -300,7 +318,6 @@ def train_models(hyperparams, X, y, X_test, y_test):
 
     # Now train PyTorch model
     st.write("Training PyTorch model...")
-
     progress_bar_pytorch = st.progress(0)
     status_text_pytorch = st.empty()
 
@@ -345,19 +362,53 @@ def train_models(hyperparams, X, y, X_test, y_test):
         ),
     )
 
-    # Train PyTorch model (simplified for demo)
+    # Create PyTorch data loaders
+    # Convert numpy arrays to PyTorch tensors
+    X_tensor = torch.tensor(X, dtype=torch.float32)
+    y_tensor = torch.tensor(y, dtype=torch.long)
+    X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+    y_test_tensor = torch.tensor(y_test, dtype=torch.long)
+
+    # Create datasets
+    from torch.utils.data import TensorDataset, DataLoader
+
+    train_dataset = TensorDataset(X_tensor, y_tensor)
+    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+
+    # Create data loaders
+    train_loader = DataLoader(
+        train_dataset, batch_size=hyperparams["batch_size"], shuffle=True
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=hyperparams["batch_size"], shuffle=False
+    )
+
+    # Actual training for PyTorch model
     start_time_pytorch = time.time()
 
+    # Train the model
     for epoch in range(hyperparams["epochs"]):
         # Update progress
-        progress = (epoch + 1) / hyperparams["epochs"]
+        progress = (epoch) / hyperparams["epochs"]
         progress_bar_pytorch.progress(progress)
         status_text_pytorch.text(
             f"PyTorch model training - Epoch {epoch+1}/{hyperparams['epochs']}"
         )
 
-        # Simulate training step
-        time.sleep(0.1)  # Just for demo purposes
+        # Actual training
+        pytorch_model.start_train(
+            input_size=input_size,
+            train_dataloader=train_loader,
+            epochs=1,  # Train for one epoch at a time
+            print_every=max(1, len(train_loader) // 5),
+            l1_lambda=0,
+            l2_lambda=hyperparams["l2_lambda"],
+            validation_data=test_loader,
+        )
+
+    # Update to 100% when done
+    progress_bar_pytorch.progress(1.0)
+    status_text_pytorch.text(f"PyTorch model training - Complete!")
 
     end_time_pytorch = time.time()
     training_time_pytorch = end_time_pytorch - start_time_pytorch
@@ -369,6 +420,8 @@ def train_models(hyperparams, X, y, X_test, y_test):
     pytorch_model.save("models/pytorch_model_new.model")
 
     st.success("Training complete! Models are ready for evaluation.")
+    st.session_state.new_models_trained = True
+    st.session_state.training_hyperparams = hyperparams
 
     return {
         "custom_model": custom_model,
@@ -404,22 +457,69 @@ def main():
 
     # Model loading status
     with st.spinner("Loading models..."):
-        # Load custom model
-        custom_model = load_custom_model()
+        # Check if new models were trained
+        if st.session_state.new_models_trained:
+            st.success("🆕 Loading newly trained models! 🆕")
 
-        # Load PyTorch model (hardcoded values for now, can be made dynamic)
-        input_size = 28 * 28  # Flattened 28x28 images
-        layer_size = 512  # Hidden layer size from pytorch_model_run.py
-        output_size = 10  # 10 classes for Fashion MNIST
-        pytorch_model = load_pytorch_model(input_size, layer_size, output_size)
+            training_hyperparams = st.session_state.training_hyperparams
+            layer_size = training_hyperparams["pytorch_layer_size"]
 
-        if custom_model and pytorch_model:
-            st.success("Models loaded successfully!")
+            # Load newly trained custom model
+            try:
+                custom_model = Model.load("models/custom_model_new.model")
+                custom_model_loaded = True
+            except Exception as e:
+                st.error(f"Error loading new custom model: {e}")
+                custom_model_loaded = False
+
+            # Load newly trained PyTorch model
+            try:
+                input_size = 28 * 28  # Flattened 28x28 images
+                layer_size = training_hyperparams[ "pytorch_layer_size"]  # Use the custom layer size
+                output_size = 10  # 10 classes for Fashion MNIST
+
+                # Initialize the PyTorch model with the same architecture
+                pytorch_model = PyTorch_Model()
+                pytorch_model.add(nn.Linear(in_features=input_size, out_features=layer_size))
+                pytorch_model.add(nn.ReLU())
+                pytorch_model.add(nn.Linear(in_features=layer_size, out_features=layer_size))
+                pytorch_model.add(nn.ReLU())
+                pytorch_model.add(nn.Linear(in_features=layer_size, out_features=output_size))
+                pytorch_model.add(nn.Softmax(dim=1))
+
+                # Load the newly trained weights
+                pytorch_model.load_state_dict(torch.load("models/pytorch_model_new.model", map_location=DEVICE))
+                pytorch_model.to(DEVICE)
+                pytorch_model.eval()  # Set the model to evaluation mode
+                pytorch_model_loaded = True
+            except Exception as e:
+                st.error(f"Error loading new PyTorch model: {e}")
+                pytorch_model_loaded = False
+
+            if custom_model_loaded and pytorch_model_loaded:
+                st.success("New models loaded successfully!")
+            else:
+                st.warning("Failed to load new models. Falling back to original models.")
+                # Load original models
+                custom_model = load_custom_model()
+                pytorch_model = load_pytorch_model(input_size, layer_size, output_size)
         else:
-            st.error(
-                "Failed to load one or both models. Check the paths and model files."
-            )
-            st.stop()
+            # Load custom model
+            custom_model = load_custom_model()
+
+            # Load PyTorch model (hardcoded values for now, can be made dynamic)
+            input_size = 28 * 28  # Flattened 28x28 images
+            layer_size = 512  # Hidden layer size from pytorch_model_run.py
+            output_size = 10  # 10 classes for Fashion MNIST
+            pytorch_model = load_pytorch_model(input_size, layer_size, output_size)
+
+            if custom_model and pytorch_model:
+                st.success("Models loaded successfully!")
+            else:
+                st.error(
+                    "Failed to load one or both models. Check the paths and model files."
+                )
+                st.stop()
 
     # Image upload
     st.header("Upload an Image")
@@ -481,12 +581,10 @@ def main():
             format="%.4f",
         )
 
-
-
     # Training button
     if st.sidebar.button("Train Models with These Parameters"):
         # Collect all hyperparameters into a dictionary
-            # Collect hyperparameters
+        # Collect hyperparameters
         hyperparams = {
                 "learning_rate": learning_rate,
                 "epochs": epochs,
@@ -521,6 +619,10 @@ def main():
 
             # Train both models with the same hyperparameters
             training_results = train_models(hyperparams, X_train, y_train, X_test, y_test)
+
+            # Set the session state to indicate new models were trained
+            st.session_state.new_models_trained = True
+            st.session_state.training_hyperparams = hyperparams
 
             # Display training results
             st.success(
