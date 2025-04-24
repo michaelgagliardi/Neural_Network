@@ -41,7 +41,7 @@ The key goal of this project was to make both neural network implementations as 
 
 1. Clone the repository:
 ```bash
-git clone [https://github.com/michaelgagliardi/Neural_Network](https://github.com/michaelgagliardi/Neural_Network)
+git clone https://github.com/michaelgagliardi/Neural_Network
 cd Neural_Network
 ```
 
