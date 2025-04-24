@@ -28,7 +28,7 @@ fashion_mnist_labels = {
     9: "Ankle boot",
 }
 
-model_type = "mnist"
+model_type = "load"
 
 if model_type == "regression":
     X, y = sine_dataset()
@@ -142,7 +142,7 @@ elif model_type == "mnist":
 
 elif model_type == "load":
     # Load the model
-    image_data = cv2.imread("data/tshirt.png", cv2.IMREAD_GRAYSCALE)
+    image_data = cv2.imread("data/pants.png", cv2.IMREAD_GRAYSCALE)
     image_data = cv2.resize(image_data, (28, 28))
     image_data = 255 - image_data
     image_data = (image_data.reshape(1, -1).astype(np.float32) - 127.5) / 127.5
