@@ -41,8 +41,8 @@ The key goal of this project was to make both neural network implementations as 
 
 1. Clone the repository:
 ```bash
-git clone <your-repository-url>
-cd <repository-folder>
+git clone https://github.com/michaelgagliardi/Neural_Network
+cd Neural_Network
 ```
 
 2. Install dependencies:
@@ -107,14 +107,3 @@ The application compares two neural network implementations:
   - `pytorch_model.model`: Saved PyTorch model
 - `data/`: Directory for dataset and example images
 
-## PyTorch Implementation Notes
-
-The updated PyTorch implementation addresses several issues from the original:
-
-1. **Layer Size Alignment**: Changed from 512 to 64 neurons to match custom model
-2. **Optimizer Parameters**: Added betas and epsilon parameters to match custom Adam implementation
-3. **L2 Regularization**: Added proper L2 regularization with the same lambda as custom model
-4. **Device Handling**: Fixed the device detection logic
-5. **Prediction & Evaluation Logic**: Made the prediction and evaluation logic more similar to the custom implementation
-
-These changes ensure that both implementations are functionally equivalent, making for a fair comparison.
