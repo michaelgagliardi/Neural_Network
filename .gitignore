@@ -129,8 +129,8 @@ dmypy.json
 .pyre/
 
 #Any additional models and parameters
-# *.parms
-# *.model
+*.parms
+*.model
 
 *.DS_Store
 .DS_Store
